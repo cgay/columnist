@@ -1,0 +1,12 @@
+{
+    "dependencies": [  ],
+    "dev-dependencies": [ "testworks" ],
+    "description": "Columnar text output",
+    "name": "columnist",
+    "version": "0.1.0",
+    "url": "https://github.com/cgay/columnist",
+    "keywords": [],
+    "contact": "carlgay@gmail.com",
+    "license": "MIT",
+    "license-url": "https://github.com/cgay/columnist/blob/main/LICENSE"
+}
