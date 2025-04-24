@@ -1,4 +1,4 @@
 Library: columnist-test-suite
-Files: library.dylan
+Files: test-suite-library.dylan
        columnist-test-suite.dylan
 Target-Type: dll
