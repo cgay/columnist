@@ -25,7 +25,6 @@ ccc   333
 dddd  4444
 """,
                text);
-  // TODO: defaults but with headers.
 end test;
 
 define constant $quick-brown-rows
@@ -70,6 +69,40 @@ define test test-columnize/dashed-borders ()
                |ccc|333|
                +-------+
                """,
+               text);
+end test;
+
+define test test-columnize/headers-dashed-borders ()
+  let text = %columnize(list(make(<column>, header: "Letters"),
+                             make(<column>, header: "Numbers")),
+                        $abc123-rows,
+                        borders: $dashed-borders);
+  assert-equal("""
++---------------+
+|Letters|Numbers|
+|===============|
+|a      |1      |
+|-------+-------|
+|bb     |22     |
+|-------+-------|
+|ccc    |333    |
++---------------+
+""",
+               text);
+end test;
+
+define test test-columnize/headers-internal-whitespace-borders ()
+  let text = %columnize(list(make(<column>, header: "ABC"),
+                             make(<column>, header: "123")),
+                        $abc123-rows,
+                        borders: $internal-whitespace-borders);
+  assert-equal("""
+ABC  123
+        
+a    1  
+bb   22 
+ccc  333
+""",
                text);
 end test;
 

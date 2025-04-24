@@ -2,8 +2,8 @@ Module: columnist-impl
 
 // TODO:
 //   * better handling of too-wide cell data for column that doesn't allow wrapping.
-//   * justify cell data left, right, center
 //   * support a maximum overall table width
+//   * support wrapped column headers
 //   * get default max width of table from terminal size if possible.
 //   * handle multi-line strings (just split instead of wrap?)
 //   * ability to nest tables would be cool.
@@ -172,7 +172,12 @@ define method columnize
   let columns = columnist.%columns;
 
   // Wrap cells if needed and compute column widths.
-  let column-widths = make(<vector>, size: columns.size, fill: $minimum-column-width);
+  let column-widths = make(<vector>, size: columns.size, fill: 0);
+  for (column in columns,
+       ci from 0)
+    // TODO: support wrapped column headers
+    column-widths[ci] := max(column.%min-width, size(column.%header | ""));
+  end;
   let new-rows = make(<stretchy-vector>);
   for (row in rows)
     if (instance?(row, <separator>))
@@ -184,8 +189,8 @@ define method columnize
         add!(new-rows, _row);
         for (datum in _row,
              column in columns,
-             i from 0)
-          column-widths[i] := max(column.%min-width, datum.size, column-widths[i]);
+             ci from 0)
+          column-widths[ci] := max(column.%min-width, datum.size, column-widths[ci]);
         end;
       end;
     end;
