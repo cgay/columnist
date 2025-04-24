@@ -15,10 +15,10 @@ define constant <string?> = false-or(<string>);
 // Minimum column width, not counting column separator characters or borders.
 define constant $minimum-column-width = 1;
 
-// define constant $align-left   = #"_left";
-// define constant $align-center = #"_center";
-// define constant $align-right  = #"_right";
-//define constant <alignment> = one-of($align-left, $align-center, $align-right);
+define constant $align-left   = #"_left";
+define constant $align-center = #"_center";
+define constant $align-right  = #"_right";
+define constant <alignment> = one-of($align-left, $align-center, $align-right);
 
 // Display rows on stream as described by a <columnist>.
 define generic columnize (stream :: <stream>, c :: <columnist>, rows :: <sequence>);
@@ -57,10 +57,10 @@ define class <border-style> (<object>)
   constant slot bottom-right           :: <string>  = "",   init-keyword: bottom-right:;
 end class;
 
-define constant $border-top      = #"top";
-define constant $border-internal = #"internal";
-define constant $border-header   = #"header";
-define constant $border-bottom   = #"bottom";
+define constant $border-top      = #"_top";
+define constant $border-internal = #"_internal";
+define constant $border-header   = #"_header";
+define constant $border-bottom   = #"_bottom";
 
 define constant <border-place>
   = one-of($border-top, $border-internal, $border-header, $border-bottom);
@@ -145,10 +145,8 @@ define open class <column> (<object>)
     init-keyword: header:;
   // constant slot %allow-wrap? :: <boolean> = #t,
   //   init-keyword: allow-wrap?:;
-  // constant slot %margin :: <string> = " ",
-  //   init-keyword: margin:;
-  // constant slot %alignment :: <alignment> = $align-left,
-  //   init-keyword: alignment:;
+  constant slot %alignment :: <alignment> = $align-left,
+    init-keyword: alignment:;
 end class;
 
 define method cell-data-as-string (cell-data :: <object>) => (s :: <string>)
@@ -185,8 +183,9 @@ define method columnize
       for (_row in wrap-row-cells(columns, map-as(<vector>, cell-data-as-string, row)))
         add!(new-rows, _row);
         for (datum in _row,
+             column in columns,
              i from 0)
-          column-widths[i] := max(datum.size, column-widths[i]);
+          column-widths[i] := max(column.%min-width, datum.size, column-widths[i]);
         end;
       end;
     end;
@@ -239,10 +238,16 @@ define method display-data-row
  => ()
   let ncols = column-widths.size;
   for (text in row,
+       column in columnist.%columns,
        ci from 0)
     (ci == 0)
       & write(stream, b.data-row-left);
-    write(stream, pad-right(text, column-widths[ci]));
+    let padder = select (column.%alignment)
+                   $align-left => pad-right;
+                   $align-center => pad;
+                   $align-right => pad-left;
+                 end;
+    write(stream, padder(text, column-widths[ci]));
     (ci < ncols - 1)
       & write(stream, b.data-row-inner);
   end for;

@@ -12,10 +12,14 @@ end library;
 
 define module columnist
   create
+    columnize,
+    $align-left,
+    $align-center,
+    $align-right,
+
     <columnist>,
     <column>,
     <separator>,
-    columnize,
     $internal-whitespace-borders, // The default
     //$whitespace-borders, TODO
     $dashed-borders,

@@ -72,3 +72,26 @@ define test test-columnize/dashed-borders ()
                """,
                text);
 end test;
+
+define test test-columnize/alignment ()
+  let text = %columnize(list(make(<column>,
+                                  minimum-width: 5,
+                                  alignment: $align-left),
+                             make(<column>,
+                                  minimum-width: 6,
+                                  alignment: $align-center),
+                             make(<column>,
+                                  minimum-width: 7,
+                                  alignment: $align-right)),
+                        #(#("a", 1, "Zork"),
+                          #("bb", 22, "Q*bert")),
+                        borders: $dashed-borders);
+  assert-equal("""
++--------------------+
+|a    |  1   |   Zork|
+|-----+------+-------|
+|bb   |  22  | Q*bert|
++--------------------+
+""",
+               text);
+end test;
