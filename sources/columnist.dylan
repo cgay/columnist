@@ -12,7 +12,7 @@ Module: columnist-impl
 
 define constant <string?> = false-or(<string>);
 
-// Minimum column width, not counting column separator characters or borders.
+// Minimum column width, not counting any borders.
 define constant $minimum-column-width = 1;
 
 define constant $align-left   = #"_left";
@@ -20,11 +20,30 @@ define constant $align-center = #"_center";
 define constant $align-right  = #"_right";
 define constant <alignment> = one-of($align-left, $align-center, $align-right);
 
-// Display rows on stream as described by a <columnist>.
-define generic columnize (stream :: <stream>, c :: <columnist>, rows :: <sequence>);
+
+define generic columnize
+    (s :: <stream>, c :: <columnist>, rows :: <sequence>)
+ => ();
+
 define generic validate-rows (c :: <columnist>, rows :: <sequence>);
+
 define generic validate-columns (c :: <columnist>);
+
 define generic cell-data-as-string (cell-data) => (s :: <string>);
+
+define generic display-header
+    (s :: <stream>, c :: <columnist>, b :: <border-style>, column-widths :: <sequence>)
+ => ();
+
+define generic display-data-row
+    (s :: <stream>, c :: <columnist>, b :: <border-style>, column-widths :: <sequence>,
+     row :: <sequence>)
+ => ();
+
+define generic display-border-row
+    (stream :: <stream>, style :: <border-style>, column-widths :: <sequence>,
+     place :: <border-place>)
+ => ();
 
 define class <border-style> (<object>)
   // Note that the *-line slots are used to determine whether or not a row separator of
@@ -161,13 +180,10 @@ end;
 // Print a table described by `columnist` using data in `rows`. Each row is either a
 // <separator> or a sequence of objects to be displayed.  All non-separator rows must be
 // the same length.  Any cell data that is not a string is converted to a string via
-// print-to-string:print:io with `escape?: #f`. There are no column headers; instead use
-// the first row as header data and add a <separator> as the second row.
-//
-// Sigh. I feel like all this code is way too complex and there is probably some more
-// elegant way to do it, but I can't see it.
+// print-to-string:print:io with `escape?: #f`.
 define method columnize
     (stream :: <stream>, columnist :: <columnist>, rows :: <sequence>)
+ => ()
   validate-rows(columnist, rows);
   let columns = columnist.%columns;
 
