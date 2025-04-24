@@ -10,7 +10,7 @@ Module: columnist-impl
 //   * cells that span multiple columns or rows
 //   * support terminal escape codes for colorizing etc.
 
-define constant <int?>    = false-or(<integer>);
+define constant <string?> = false-or(<string>);
 
 // Minimum column width, not counting column separator characters or borders.
 define constant $minimum-column-width = 1;
@@ -25,74 +25,92 @@ define generic columnize (stream :: <stream>, c :: <columnist>, rows :: <sequenc
 define generic validate-rows (c :: <columnist>, rows :: <sequence>);
 define generic validate-columns (c :: <columnist>);
 define generic cell-data-as-string (cell-data) => (s :: <string>);
-define generic left-border         (c :: <columnist>) => (s :: <string>);
-define generic inter-column-border (c :: <columnist>) => (s :: <string>);
-define generic right-border        (c :: <columnist>) => (s :: <string>);
-define generic display-separator
-    (stream :: <stream>, c :: <columnist>, sep :: <separator>,
-     column-widths :: <sequence>, row-count :: <integer>, row-num :: <integer>)
- => ();
 
-define class <separator> (<object>)
-  constant slot %border :: <string> = "-", init-keyword: border:;
+define class <border-style> (<object>)
+  // Note that the *-line slots are used to determine whether or not a row separator of
+  // the given type should be displayed. For example, if top-line is #f no top border is
+  // displayed.  Column borders may be omitted by use of the empty string.
+
+  // Top line, the line above the headers (or above the top row if no headers).
+  constant slot top-left               :: <string>  = "",   init-keyword: top-left:;
+  constant slot top-line               :: <string?> = #f,   init-keyword: top-line:;
+  constant slot top-inner              :: <string>  = "",   init-keyword: top-inner:;
+  constant slot top-right              :: <string>  = "",   init-keyword: top-right:;
+  // Data rows
+  constant slot data-row-left          :: <string>  = "",   init-keyword: data-row-left:;
+  constant slot data-row-inner         :: <string>  = "  ", init-keyword: data-row-inner:;
+  constant slot data-row-right         :: <string>  = "",   init-keyword: data-row-right:;
+  // Separator between header and first data row.
+  constant slot header-separator-left  :: <string>  = "",   init-keyword: header-separator-left:;
+  constant slot header-separator-line  :: <string?> = #f,   init-keyword: header-separator-line:;
+  constant slot header-separator-inner :: <string>  = "",   init-keyword: header-separator-inner:;
+  constant slot header-separator-right :: <string>  = "",   init-keyword: header-separator-right:;
+  // Any other separator line.
+  constant slot separator-left         :: <string>  = "",   init-keyword: separator-left:;
+  constant slot separator-line         :: <string?> = #f,   init-keyword: separator-line:;
+  constant slot separator-inner        :: <string>  = "",   init-keyword: separator-inner:;
+  constant slot separator-right        :: <string>  = "",   init-keyword: separator-right:;
+  // Bottom border
+  constant slot bottom-left            :: <string>  = "",   init-keyword: bottom-left:;
+  constant slot bottom-line            :: <string?> = #f,   init-keyword: bottom-line:;
+  constant slot bottom-inner           :: <string>  = "",   init-keyword: bottom-inner:;
+  constant slot bottom-right           :: <string>  = "",   init-keyword: bottom-right:;
 end class;
 
-define method separator-border (sep :: <separator>) => (s :: <string>)
-  if (sep.%border.size > 1)
-    error("separator borders of length > 1 are not yet implemented");
-  end;
-  sep.%border
-end method;
+define constant $border-top      = #"top";
+define constant $border-internal = #"internal";
+define constant $border-header   = #"header";
+define constant $border-bottom   = #"bottom";
+
+define constant <border-place>
+  = one-of($border-top, $border-internal, $border-header, $border-bottom);
+
+// TODO: validate that each string is either 0 or 1 in size?
+
+// No edge borders, just whitespace between columns and after header row.
+define constant $internal-whitespace-borders
+  = make(<border-style>,
+         data-row-inner: "  ",
+         header-separator-left: "",
+         header-separator-line: " ",
+         header-separator-inner: "  ",
+         header-separator-right: "");
+
+define constant $default-borders = $internal-whitespace-borders;
+
+// Boxes, but with dashed lines, so chic, n'est pas?
+define constant $dashed-borders
+  = make(<border-style>,
+         top-left: "+",
+         top-inner: "-",
+         top-right: "+",
+         top-line: "-",
+         data-row-left:  "|",
+         data-row-inner: "|",
+         data-row-right: "|",
+         header-separator-left: "|",
+         header-separator-inner: "=",
+         header-separator-line:  "=",
+         header-separator-right: "|",
+         separator-left: "|",
+         separator-line: "-",
+         separator-inner: "+",
+         separator-right: "|",
+         bottom-left: "+",
+         bottom-inner: "-",
+         bottom-right: "+",
+         bottom-line: "-");
+
+define class <separator> (<object>)
+end class;
 
 // A description of how to display rows.  By default there are no visible borders.
 define open class <columnist> (<object>)
-  constant slot %columns       :: <sequence>, required-init-keyword: columns:;
-
-  // Borders: There is no inter-row-border; use separators instead. The corner border
-  // applies to all corners, whether edge or inner. If the left/right border is non-empty
-  // you probably also want to supply a non-empty corner. Border strings with length > 1
-  // aren't supported yet.
-
-  constant slot %left-border         :: <string> = "",  init-keyword: left-border:;
-  constant slot %right-border        :: <string> = "",  init-keyword: right-border:;
-  constant slot %inter-column-border :: <string> = " ", init-keyword: inter-column-border:;
-  // TODO: should this belong to the <separator> class since it is only used when writing
-  // separators?
-  constant slot %corner-border       :: <string> = "",  init-keyword: corner-border:;
+  constant slot %columns :: <sequence>,
+    required-init-keyword: columns:;
+  constant slot %borders :: <border-style> = $default-borders,
+    init-keyword: borders:;
 end class;
-
-define inline method left-border (c :: <columnist>) => (border :: <string>)
-  c.%left-border
-end method;
-
-define inline method right-border (c :: <columnist>) => (border :: <string>)
-  c.%right-border
-end method;
-
-define inline method inter-column-border (c :: <columnist>) => (border :: <string>)
-  c.%inter-column-border
-end method;
-
-define inline method corner-border (c :: <columnist>) => (border :: <string>)
-  c.%corner-border
-end method;
-
-// As a convenience, border?: #t creates a standard ASCII art border.
-define method make
-    (class :: subclass(<columnist>), #rest args, #key border? :: <boolean>)
- => (c :: <columnist>)
-  if (border?)
-    apply(next-method,
-          row-edge-border: "-",
-          row-inner-border: ".",
-          column-edge-border: "|",
-          column-inner-border: ".",
-          corner-border: '+',
-          args)
-  else
-    next-method()
-  end
-end method;
 
 define method initialize (c :: <columnist>, #key) => ()
   validate-columns(c);
@@ -121,8 +139,10 @@ define open class <column> (<object>)
   // Widths in characters. Assumes fixed-width fonts....hmm.
   constant slot %min-width :: <integer> = $minimum-column-width,
     init-keyword: minimum-width:;
-  constant slot %max-width :: <int?> = #f,
+  constant slot %max-width :: false-or(<integer>) = #f,
     init-keyword: maximum-width:;
+  constant slot %header :: <string?> = #f,
+    init-keyword: header:;
   // constant slot %allow-wrap? :: <boolean> = #t,
   //   init-keyword: allow-wrap?:;
   // constant slot %margin :: <string> = " ",
@@ -172,26 +192,89 @@ define method columnize
     end;
   end for;
 
-  // Output the data.
+  // Output the table.  Border style is passed explicitly so subclassers can dispatch on it.
+  let b = columnist.%borders;
+  if (b.top-line)
+    display-border-row(stream, b, column-widths, $border-top);
+    new-line(stream);
+  end;
+  if (any?(%header, columns))
+    display-header(stream, columnist, b, column-widths);
+    new-line(stream);
+    if (b.header-separator-line)
+      display-border-row(stream, b, column-widths, $border-header);
+      new-line(stream);
+    end;
+  end;
   for (row in new-rows,
        ri from 0)
-    if (instance?(row, <separator>))
-      display-separator(stream, columnist, row, column-widths, new-rows.size, ri);
+    display-data-row(stream, columnist, b, column-widths, row);
+    // Don't output a \n after the last line. That's up to our caller to decide.
+    let last-row? = ri == new-rows.size - 1;
+    if (last-row?)
+      if (b.bottom-line)
+        new-line(stream);
+        display-border-row(stream, b, column-widths, $border-bottom);
+      end;
     else
-      for (cell-datum in row,
-           ci from 0)
-        (ci == 0)
-          & write(stream, columnist.left-border);
-        write(stream, pad-right(cell-datum, column-widths[ci]));
-        (ci < row.size - 1)
-          & write(stream, columnist.inter-column-border);
-      end for;
-      write(stream, columnist.right-border);
-    end;
-    unless (ri == new-rows.size - 1)
-      write-element(stream, '\n');
+      new-line(stream);
+      if (b.separator-line)
+        display-border-row(stream, b, column-widths, $border-internal);
+        new-line(stream);
+      end;
     end;
   end for;
+end method;
+
+define method display-header
+    (stream :: <stream>, columnist :: <columnist>, b :: <border-style>,
+     column-widths :: <sequence>)
+ => ()
+  display-data-row(stream, columnist, b, column-widths, map(%header, columnist.%columns));
+end method;
+
+define method display-data-row
+    (stream :: <stream>, columnist :: <columnist>, b :: <border-style>,
+     column-widths :: <sequence>, row :: <sequence>)
+ => ()
+  let ncols = column-widths.size;
+  for (text in row,
+       ci from 0)
+    (ci == 0)
+      & write(stream, b.data-row-left);
+    write(stream, pad-right(text, column-widths[ci]));
+    (ci < ncols - 1)
+      & write(stream, b.data-row-inner);
+  end for;
+  write(stream, b.data-row-right);
+end method;
+
+define method display-border-row
+    (stream :: <stream>, style :: <border-style>, column-widths :: <sequence>,
+     place :: <border-place>)
+ => ()
+    let (left, line, inner, right)
+      = select (place)
+          $border-top =>
+            values(style.top-left, style.top-line, style.top-inner, style.top-right);
+          $border-header =>
+            values(style.header-separator-left, style.header-separator-line,
+                   style.header-separator-inner, style.header-separator-right);
+          $border-internal =>
+            values(style.separator-left, style.separator-line,
+                   style.separator-inner, style.separator-right);
+          $border-bottom =>
+            values(style.bottom-left, style.bottom-line,
+                   style.bottom-inner, style.bottom-right);
+        end;
+    write(stream, left);
+    for (width in column-widths,
+         ci from 0)
+      write(stream, pad(line, width, fill: line[0]));
+      (ci < column-widths.size - 1)
+        & write(stream, inner);
+    end;
+    write(stream, right);
 end method;
 
 define method validate-rows (columnist :: <columnist>, rows :: <sequence>)
@@ -281,38 +364,3 @@ define function split-cell-datum
   end block;
   reverse!(lines)
 end function;
-
-define method display-separator
-    (stream :: <stream>, columnist :: <columnist>, sep :: <separator>,
-     column-widths :: <sequence>, row-count :: <integer>, row-num :: <integer>)
- => ()
-  let inner-table-width
-    = reduce1(\+, column-widths)
-        + columnist.inter-column-border.size * (column-widths.size - 1);
-  let wleft = columnist.left-border.size;
-  let wright = columnist.right-border.size;
-  let table-width = inner-table-width + wleft + wright;
-  let sep-char = sep.separator-border[0];  // TODO: separator.size > 1
-  if (row-num == 0 | row-num == row-count - 1)
-    // top or bottom separator line
-    write(stream, columnist.corner-border);
-    write(stream, make(<string>, size: inner-table-width, fill: sep-char));
-    write(stream, columnist.corner-border);
-  else
-    // middle separator line
-    write(stream, columnist.left-border);
-    let line = make(<string>, size: inner-table-width, fill: sep-char);
-    let pos = 0;
-    for (width in column-widths,
-         col from 0,
-         while: col < column-widths.size - 1)
-      pos := pos + width;
-      for (ch in columnist.corner-border,
-           i from pos)
-        line[i] := ch;
-      end;
-    end;
-    write(stream, line);
-    write(stream, columnist.right-border);
-  end;
-end method;

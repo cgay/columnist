@@ -16,8 +16,22 @@ define module columnist
     <column>,
     <separator>,
     columnize,
+    $internal-whitespace-borders, // The default
+    //$whitespace-borders, TODO
+    $dashed-borders,
+    //$dotted-borders, TODO
+    //$line-borders,   TODO           // extended ASCII
 
     // for subclassers
+    <columnist>,
+    <column>,
+    <separator>,
+    <border-style>,
+    display-header,
+    display-data-row,
+    display-border-row,
+    // display-cell, ?
+    // display-row, ?
     validate-rows,
     validate-columns;
 end module;
