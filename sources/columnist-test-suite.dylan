@@ -27,6 +27,20 @@ dddd  4444
                text);
 end test;
 
+// Rightmost column has no padding so no trailing whitespace.
+define test test-columnize/no-padding ()
+  let text = %columnize(list(make(<column>),
+                             make(<column>, pad?: #f)),
+                        $abcd1234-rows);
+  assert-equal("""
+a     1
+bb    22
+ccc   333
+dddd  4444
+""",
+               text);
+end test;
+
 define constant $quick-brown-rows
   = #(#("the quick frown box jumps over the dazy log", "column 2", "column 3"),
       #("supercalifragilistic",                        "expy",     "alidoshus"),

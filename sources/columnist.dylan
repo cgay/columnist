@@ -166,6 +166,11 @@ define open class <column> (<object>)
   //   init-keyword: allow-wrap?:;
   constant slot %alignment :: <alignment> = $align-left,
     init-keyword: alignment:;
+  // When #f, no whitespace padding is done for the cell data. This is only useful if
+  // there are no column borders and this is the rightmost column. (Its original purpose
+  // is to prevent having trailing whitespace in --help output.)
+  constant slot %pad? :: <boolean> = #t,
+    init-keyword: pad?:;
 end class;
 
 define method cell-data-as-string (cell-data :: <object>) => (s :: <string>)
@@ -263,10 +268,14 @@ define method display-data-row
        ci from 0)
     (ci == 0)
       & write(stream, b.data-row-left);
-    let padder = select (column.%alignment)
-                   $align-left => pad-right;
-                   $align-center => pad;
-                   $align-right => pad-left;
+    let padder = if (column.%pad?)
+                   select (column.%alignment)
+                     $align-left => pad-right;
+                     $align-center => pad;
+                     $align-right => pad-left;
+                   end
+                 else
+                   method (text, _) text end
                  end;
     write(stream, padder(text, column-widths[ci]));
     (ci < ncols - 1)
