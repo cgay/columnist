@@ -13,7 +13,7 @@ Module: columnist-impl
 define constant <string?> = false-or(<string>);
 
 // Minimum column width, not counting any borders.
-define constant $minimum-column-width = 1;
+define constant $minimum-column-width = 0;
 
 define constant $align-left   = #"_left";
 define constant $align-center = #"_center";
@@ -21,8 +21,37 @@ define constant $align-right  = #"_right";
 define constant <alignment> = one-of($align-left, $align-center, $align-right);
 
 
+// A columnist or a sequence of columns.
+define constant <column-spec> = type-union(<columnist>, <sequence>);
+
+// Print a table described by `columnist` using data in `rows`. Each row is either a
+// <separator> or a sequence of objects to be displayed.  All non-separator rows must be
+// the same length.  Any cell data that is not a string is converted to a string via
+// print-to-string:print:io with `escape?: #f`.  This is primarily a slightly more
+// concise entry point than `display-table`.
 define generic columnize
-    (s :: <stream>, c :: <columnist>, rows :: <sequence>)
+    (stream :: <stream>, columnist :: <column-spec>, rows :: <sequence>,
+     #rest columnist-options)
+ => ();
+
+define method columnize
+    (stream :: <stream>, columns :: <sequence>, rows :: <sequence>, #rest options)
+ => ()
+  let columnist = apply(make, <columnist>, columns: columns, options);
+  columnize(stream, columnist, rows);
+end method;
+
+define method columnize
+    (stream :: <stream>, columnist :: <columnist>, rows :: <sequence>, #rest options)
+ => ()
+  assert(options.empty?);
+  display-table(stream, columnist, rows)
+end method;
+
+// This is part of the user API and the columnist protocol for subclassers, but it is
+// expected that users will usually call the more concise `columnize` instead.
+define generic display-table
+    (stream :: <stream>, columnist :: <columnist>, rows :: <sequence>)
  => ();
 
 define generic validate-rows (c :: <columnist>, rows :: <sequence>);
@@ -182,18 +211,14 @@ define method cell-data-as-string (cell-data :: <string>) => (s :: <string>)
 end;
 
 
-// Print a table described by `columnist` using data in `rows`. Each row is either a
-// <separator> or a sequence of objects to be displayed.  All non-separator rows must be
-// the same length.  Any cell data that is not a string is converted to a string via
-// print-to-string:print:io with `escape?: #f`.
-define method columnize
+define method display-table
     (stream :: <stream>, columnist :: <columnist>, rows :: <sequence>)
  => ()
   validate-rows(columnist, rows);
   let columns = columnist.%columns;
 
   // Wrap cells if needed and compute column widths.
-  let column-widths = make(<vector>, size: columns.size, fill: 0);
+  let column-widths = make(<vector>, size: columns.size, fill: $minimum-column-width);
   for (column in columns,
        ci from 0)
     // TODO: support wrapped column headers
