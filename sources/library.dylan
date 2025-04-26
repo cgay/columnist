@@ -60,6 +60,7 @@ define module columnist-protocol
       $border-header,
       $border-bottom,
     <alignment>,
+    display-table,
     display-header,
     display-data-row,
     display-border-row,
