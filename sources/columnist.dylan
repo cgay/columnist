@@ -280,7 +280,11 @@ define method display-header
     (stream :: <stream>, columnist :: <columnist>, b :: <border-style>,
      column-widths :: <sequence>)
  => ()
-  display-data-row(stream, columnist, b, column-widths, map(%header, columnist.%columns));
+  display-data-row(stream, columnist, b, column-widths,
+                   map(method (c)
+                         c.%header | ""
+                       end,
+                       columnist.%columns));
 end method;
 
 define method display-data-row
