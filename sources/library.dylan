@@ -19,7 +19,6 @@ define module columnist
     $align-left,
     $align-center,
     $align-right,
-    <separator>,
 
     // Borders
     $default-borders,

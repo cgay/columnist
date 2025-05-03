@@ -24,13 +24,11 @@ define constant <alignment> = one-of($align-left, $align-center, $align-right);
 // A columnist or a sequence of columns.
 define constant <column-spec> = type-union(<columnist>, <sequence>);
 
-// Print a table described by `columnist` using data in `rows`. Each row is either a
-// <separator> or a sequence of objects to be displayed.  All non-separator rows must be
-// the same length.  Any cell data that is not a string is converted to a string via
-// print-to-string:print:io with `escape?: #f`.  This is primarily a slightly more
-// concise entry point than `display-table`.
+// Print a table described by `spec` using data in `rows`. Each row is a sequence of
+// objects to be displayed.  All rows must be the same length.  Any cell data that is not
+// a string is converted to a string via print-to-string:print:io with `escape?: #f`.
 define generic columnize
-    (stream :: <stream>, columnist :: <column-spec>, rows :: <sequence>,
+    (stream :: <stream>, spec :: <column-spec>, rows :: <sequence>,
      #rest columnist-options)
  => ();
 
@@ -66,7 +64,7 @@ define generic display-header
 
 define generic display-data-row
     (s :: <stream>, c :: <columnist>, b :: <border-style>, column-widths :: <sequence>,
-     row :: <sequence>)
+     row-ish :: <object>)
  => ();
 
 define generic display-border-row
@@ -149,9 +147,6 @@ define constant $dashed-borders
          bottom-right: "+",
          bottom-line: "-");
 
-define class <separator> (<object>)
-end class;
-
 // A description of how to display rows.  By default there are no visible borders.
 define open class <columnist> (<object>)
   constant slot %columns :: <sequence>,
@@ -226,18 +221,12 @@ define method display-table
   end;
   let new-rows = make(<stretchy-vector>);
   for (row in rows)
-    if (instance?(row, <separator>))
-      // Separators always take exactly one row for now. They can't be converted to row
-      // data until column widths have been determined.
-      add!(new-rows, row);
-    else
-      for (_row in wrap-row-cells(columns, map-as(<vector>, cell-data-as-string, row)))
-        add!(new-rows, _row);
-        for (datum in _row,
-             column in columns,
-             ci from 0)
-          column-widths[ci] := max(column.%min-width, datum.size, column-widths[ci]);
-        end;
+    for (_row in wrap-row-cells(columns, map-as(<vector>, cell-data-as-string, row)))
+      add!(new-rows, _row);
+      for (datum in _row,
+           column in columns,
+           ci from 0)
+        column-widths[ci] := max(column.%min-width, datum.size, column-widths[ci]);
       end;
     end;
   end for;
@@ -348,10 +337,8 @@ define method validate-rows (columnist :: <columnist>, rows :: <sequence>)
     let n-columns = columnist.%columns.size;
     for (row in rows,
          i from 0)
-      unless (instance?(row, <separator>)
-                | (instance?(row, <sequence>)
-                     & row.size == n-columns))
-        error("row must be either a separator or a sequence with the same length"
+      unless (instance?(row, <sequence>) & row.size == n-columns)
+        error("row must be a sequence with the same length"
                 " as other rows (row %d)", i);
       end
     end

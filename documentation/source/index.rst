@@ -97,10 +97,9 @@ columnist reference
 
    :parameter stream: An instance of :class:`<stream>`.
    :parameter columnist: An instance of :const:`<column-spec>`.
-   :parameter rows: An instance of :drm:`<sequence>`.  Each row is either a sequence of
-      cell data or a :class:`<separator>` instance.  Each row must have the same number
-      of elements as there are columns in the table.  All data is converted to strings
-      using `print-to-string(..., escape?: #f)
+   :parameter rows: An instance of :drm:`<sequence>`.  Each row is a sequence of cell
+      data.  Each row must have the same number of elements as there are columns in the
+      table.  All data is converted to strings using `print-to-string(..., escape?: #f)
       <https://opendylan.org/library-reference/io/print.html#io:print:print-to-string>`_.
    :parameter #rest columnist-options: Options to be passed to :drm:`make` when creating
       a :class:`<columnist>` instance.  See :class:`<columnist>` init options.
@@ -195,19 +194,14 @@ Other
       :const:`$default-borders`.
    :keyword required columns: A :drm:`<sequence>` of :class:`<column>` instances.
 
-.. class:: <separator>
-
-   :superclasses: :drm:`<object>`
-
-   **TODO**: Separators aren't yet complete.
-
 
 columnist-protocol reference
 ============================
 
 .. current-module:: columnist-protocol
 
-This module is provided for anyone who wants to create their own border type
+This module is provided for anyone who wants to create their own border type. For now, if
+you want to extend the library Use The Sauce.
 
 .. constant:: $border-bottom
 
