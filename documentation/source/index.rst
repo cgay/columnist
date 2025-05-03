@@ -69,7 +69,7 @@ Example: Borders and headers
 
    columnize(stream,
              list(make(<column>, header: "Letters"),
-                  make(<column>, header" "Numbers")),
+                  make(<column>, header: "Numbers")),
              #(#("a", 1), #("bb", 22)),
              borders: $dashed-borders)
 
@@ -93,19 +93,22 @@ columnist reference
 
    :signature: columnize (stream columnist rows #rest columnist-options) => ()
 
+   Print rows of data to a stream in columnar form (i.e., as a table).
+
    :parameter stream: An instance of :class:`<stream>`.
    :parameter columnist: An instance of :const:`<column-spec>`.
-   :parameter rows: An instance of :drm:`<sequence>`.  Each row must have the same number
-                    of elements as there are columns in the table.  All data is converted
-                    to strings using `print-to-string(..., escape?: #f)
-                    <https://opendylan.org/library-reference/io/print.html#io:print:print-to-string>`_.
-   :parameter #rest columnist-options: An instance of :drm:`<object>`. See
-                                       :class:`<columnist>` init options.
+   :parameter rows: An instance of :drm:`<sequence>`.  Each row is a sequence of cell
+      data.  Each row must have the same number of elements as there are columns in the
+      table.  All data is converted to strings using `print-to-string(..., escape?: #f)
+      <https://opendylan.org/library-reference/io/print.html#io:print:print-to-string>`_.
+   :parameter #rest columnist-options: Options to be passed to :drm:`make` when creating
+      a :class:`<columnist>` instance.  See :class:`<columnist>` init options.
 
 .. method:: columnize
    :specializer: <stream>, <sequence>, <sequence>
 
-   A method that accepts a sequence of :class:`<column>` objects.
+   A method that accepts a sequence of :class:`<column>` objects. This method is simply a
+   convenience so that you don't need to explicitly create a :class:`<columnist>` object.
 
 .. method:: columnize
    :specializer: <stream>, <columnist>, <sequence>
@@ -114,6 +117,9 @@ columnist reference
 
 Alignment
 ---------
+
+Specify alignment within a column with ``alignment:`` keyword. For example: ``alignment:
+$align-right``.  The default alignment is :const:`$align-left`.
 
 .. constant:: $align-center
 
@@ -130,6 +136,15 @@ Alignment
 Borders
 -------
 
+Specify the border style either when creating an instance of :class:`<columnist>` or when
+calling :gf:`columnist`. Examples:
+
+.. code:: dylan
+
+   columnize(stream, make(<columnist>, columns, borders: $dashed-borders), rows)
+   // or
+   columnize(stream, columns, rows, borders: $dashed-borders)
+
 .. constant:: $dashed-borders
 
    Use "dashed" borders. Using "+", "-", and "|" characters for all borders, including
@@ -144,6 +159,9 @@ Borders
    No external borders, but a blank line after the column headers (if any) and two spaces
    between columns.
 
+Columns
+-------
+
 .. class:: <column>
    :open:
 
@@ -153,28 +171,28 @@ Borders
 
    :keyword alignment: An instance of :const:`<alignment>`.
    :keyword header: An instance of :const:`<string?>`.
-   :keyword maximum-width: An instance of ``false-or(<integer>)``.
-   :keyword minimum-width: An instance of :drm:`<integer>`.
+   :keyword maximum-width: An instance of ``false-or(<integer>)``. The default is
+      :drm:`#f`.
+   :keyword minimum-width: An instance of :drm:`<integer>`. The default is ``0``.
    :keyword pad?: An instance of :drm:`<boolean>`. If :drm:`#f` then no whitespace
-                  padding is output after the cell value. This is only useful if this is
-                  the last cell in the row to contain any data and there are no column
-                  borders. The intended use case is to avoid trailing whitespace in
-                  terminal output.
+      padding is output after the cell value. This is only useful if this is the last
+      cell in the row to contain any data and there are no column borders. The intended
+      use case is to avoid trailing whitespace in terminal output.
+
+Other
+-----
 
 .. class:: <columnist>
    :open:
 
    A description of how to display a table. Currently the only attributes are a sequence
-   of :class:`<column>` instances and a border specification.
+   of :class:`<column>` instances and a border specification. 
 
    :superclasses: :drm:`<object>`
 
-   :keyword borders: An instance of :class:`<border-style>`.
-   :keyword required columns: An instance of :drm:`<sequence>`.
-
-.. class:: <separator>
-
-   :superclasses: :drm:`<object>`
+   :keyword borders: An instance of :class:`<border-style>`. The default is
+      :const:`$default-borders`.
+   :keyword required columns: A :drm:`<sequence>` of :class:`<column>` instances.
 
 
 columnist-protocol reference
@@ -182,7 +200,8 @@ columnist-protocol reference
 
 .. current-module:: columnist-protocol
 
-This module is provided for anyone who wants to create their own border type
+This module is provided for anyone who wants to create their own border type. For now, if
+you want to extend the library Use The Sauce.
 
 .. constant:: $border-bottom
 

@@ -19,7 +19,6 @@ define module columnist
     $align-left,
     $align-center,
     $align-right,
-    <separator>,
 
     // Borders
     $default-borders,
@@ -60,6 +59,7 @@ define module columnist-protocol
       $border-header,
       $border-bottom,
     <alignment>,
+    cell-data-as-string,
     display-table,
     display-header,
     display-data-row,

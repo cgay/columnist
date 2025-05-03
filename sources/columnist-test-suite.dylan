@@ -120,6 +120,20 @@ ccc  333
                text);
 end test;
 
+define test test-columnize/some-headers ()
+  let text = %columnize(list(make(<column>, header: "ABC"),
+                             make(<column>)), // header is #f
+                        $abc123-rows);
+  assert-equal("""
+ABC     
+        
+a    1  
+bb   22 
+ccc  333
+""",
+               text);
+end test;
+
 define test test-columnize/alignment ()
   let text = %columnize(list(make(<column>,
                                   minimum-width: 5,
