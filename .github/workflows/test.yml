@@ -1,4 +1,4 @@
-name: Run tests
+name: build-and-test
 
 on:
   push:
@@ -6,8 +6,6 @@ on:
     paths-ignore:
       - 'documentation/**'
   pull_request:
-    branches:
-      - main
     paths-ignore:
       - 'documentation/**'
 
@@ -16,27 +14,25 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Open Dylan
         uses: dylan-lang/install-opendylan@v3
 
-      - name: Download dependencies
-        run: dylan update
+      - name: Install dependencies
+        run: deft update
 
-      - name: Build tests
-        run: |
-          dylan build testworks-run
-          dylan build columnist-test-suite
-
-      - name: Run tests
-        run: _build/bin/testworks-run --load libcolumnist-test-suite.so --report surefire --report-file=_build/TEST-columnist.xml
+      - name: Build and Run Tests
+        run: deft test -- --report surefire --report-file _build/test-output.xml
 
       - name: Publish Test Report
         if: success() || failure()
-        uses: mikepenz/action-junit-report@v4
+        uses: mikepenz/action-junit-report@v6
         with:
-          report_paths: '**/_build/TEST-*.xml'
+          report_paths: '**/_build/test-output.xml'
